@@ -194,28 +194,24 @@ fun CalendarScreen(
                     val isToday = date == today
 
                     val dayTxs = allTransactions.filter { it.dateEpochDay == dateEpoch }
-                    val hasExpenses = dayTxs.any { it.type.equals("expense", ignoreCase = true) }
-                    val hasIncome = dayTxs.any { it.type.equals("income", ignoreCase = true) }
+                    val dayExpenseCents = dayTxs.filter { it.type.equals("expense", ignoreCase = true) }.sumOf { it.amountCents }
+                    val dayIncomeCents = dayTxs.filter { it.type.equals("income", ignoreCase = true) }.sumOf { it.amountCents }
+                    val hasExpenses = dayExpenseCents > 0
+                    val hasIncome = dayIncomeCents > 0
 
                     // Recurring bills due on this date (faint icon)
                     val hasRecurringDue = allRecurring.any {
                         !it.isPaused && it.nextDueDateEpochDay == dateEpoch
                     }
 
-                    // Dot color coding: green (income only), red (expense only), gray (mixed)
-                    val dotColor = when {
-                        hasExpenses && hasIncome -> Color.Gray
-                        hasExpenses -> ExpenseRedDark
-                        hasIncome -> IncomeGreenDark
-                        else -> null
-                    }
+                    val currencySymbol = CurrencyUtils.getSymbol(currencyCode)
 
                     Box(
                         modifier = Modifier
-                            .aspectRatio(1f)
+                            .aspectRatio(0.72f)
                             .clip(RoundedCornerShape(12.dp))
                             .background(
-                                if (isToday) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                                if (isToday) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
                                 else MaterialTheme.colorScheme.surface
                             )
                             .then(
@@ -240,38 +236,61 @@ fun CalendarScreen(
                     ) {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
+                            verticalArrangement = Arrangement.Center,
+                            modifier = Modifier.padding(horizontal = 2.dp, vertical = 2.dp)
                         ) {
                             Text(
                                 text = dayNum.toString(),
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = if (isToday) FontWeight.Bold else FontWeight.Medium,
-                                color = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = if (isToday) FontWeight.Bold else FontWeight.SemiBold,
+                                color = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                fontSize = 12.sp
                             )
 
-                            Spacer(modifier = Modifier.height(3.dp))
+                            Spacer(modifier = Modifier.height(2.dp))
 
-                            Row(
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                if (dotColor != null) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(6.dp)
-                                            .background(dotColor, CircleShape)
-                                    )
-                                }
+                            // Show actual amount in the day cell
+                            if (hasExpenses && !hasIncome) {
+                                Text(
+                                    text = "-${formatDayAmount(dayExpenseCents, currencySymbol)}",
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = ExpenseRedDark,
+                                    maxLines = 1
+                                )
+                            } else if (hasIncome && !hasExpenses) {
+                                Text(
+                                    text = "+${formatDayAmount(dayIncomeCents, currencySymbol)}",
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = IncomeGreenDark,
+                                    maxLines = 1
+                                )
+                            } else if (hasExpenses && hasIncome) {
+                                Text(
+                                    text = "-${formatDayAmount(dayExpenseCents, currencySymbol)}",
+                                    fontSize = 8.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = ExpenseRedDark,
+                                    maxLines = 1
+                                )
+                                Text(
+                                    text = "+${formatDayAmount(dayIncomeCents, currencySymbol)}",
+                                    fontSize = 8.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = IncomeGreenDark,
+                                    maxLines = 1
+                                )
+                            }
 
-                                if (hasRecurringDue) {
-                                    Spacer(modifier = Modifier.width(2.dp))
-                                    Icon(
-                                        imageVector = Icons.Default.Repeat,
-                                        contentDescription = "Recurring Bill",
-                                        tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f),
-                                        modifier = Modifier.size(10.dp)
-                                    )
-                                }
+                            if (hasRecurringDue) {
+                                Spacer(modifier = Modifier.height(1.dp))
+                                Icon(
+                                    imageVector = Icons.Default.Repeat,
+                                    contentDescription = "Recurring Bill",
+                                    tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f),
+                                    modifier = Modifier.size(9.dp)
+                                )
                             }
                         }
                     }
@@ -326,3 +345,15 @@ fun CalendarScreen(
         )
     }
 }
+
+private fun formatDayAmount(cents: Long, symbol: String): String {
+    val absCents = kotlin.math.abs(cents)
+    val dollars = absCents / 100.0
+    return when {
+        dollars >= 10000 -> "$symbol${(dollars / 1000).toInt()}k"
+        dollars >= 1000 -> "$symbol${String.format(java.util.Locale.US, "%.1fk", dollars / 1000)}"
+        absCents % 100 == 0L -> "$symbol${(absCents / 100)}"
+        else -> "$symbol${String.format(java.util.Locale.US, "%.2f", dollars)}"
+    }
+}
+

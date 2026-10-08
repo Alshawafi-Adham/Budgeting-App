@@ -114,6 +114,40 @@ object DateUtils {
         return epochDayToLocalDate(epochDay).format(SHORT_DATE_FORMATTER)
     }
 
+    fun getWeekRange(anchorDate: LocalDate, isSundayStart: Boolean = true): Pair<LocalDate, LocalDate> {
+        val dayOfWeek = anchorDate.dayOfWeek.value // 1 (Mon) - 7 (Sun)
+        val daysBeforeStart = if (isSundayStart) {
+            if (dayOfWeek == 7) 0 else dayOfWeek
+        } else {
+            dayOfWeek - 1
+        }
+        val start = anchorDate.minusDays(daysBeforeStart.toLong())
+        val end = start.plusDays(6)
+        return Pair(start, end)
+    }
+
+    fun getMonthRange(anchorDate: LocalDate): Pair<LocalDate, LocalDate> {
+        val start = anchorDate.withDayOfMonth(1)
+        val end = anchorDate.withDayOfMonth(anchorDate.lengthOfMonth())
+        return Pair(start, end)
+    }
+
+    fun getYearRange(anchorDate: LocalDate): Pair<LocalDate, LocalDate> {
+        val start = LocalDate.of(anchorDate.year, 1, 1)
+        val end = LocalDate.of(anchorDate.year, 12, 31)
+        return Pair(start, end)
+    }
+
+    fun formatDateRange(start: LocalDate, end: LocalDate): String {
+        return if (start == end) {
+            start.format(SHORT_DATE_FORMATTER)
+        } else if (start.year == end.year) {
+            "${start.format(DAY_MONTH_FORMATTER)} - ${end.format(SHORT_DATE_FORMATTER)}"
+        } else {
+            "${start.format(SHORT_DATE_FORMATTER)} - ${end.format(SHORT_DATE_FORMATTER)}"
+        }
+    }
+
     /**
      * Handles month-end clamp logic for recurring transactions.
      * E.g. Jan 31 + 1 month with anchor day 31 -> Feb 28 (or 29 in leap year).

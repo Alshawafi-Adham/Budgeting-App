@@ -72,7 +72,7 @@ fun TransactionItemRow(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = transaction.category,
+                        text = if (!transaction.subcategory.isNullOrBlank()) "${transaction.category} • ${transaction.subcategory}" else transaction.category,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface,

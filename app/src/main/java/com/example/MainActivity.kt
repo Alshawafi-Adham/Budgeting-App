@@ -25,6 +25,7 @@ import com.example.ui.components.BudgetFlowBottomBar
 import com.example.ui.screens.AddTransactionSheet
 import com.example.ui.screens.BudgetScreen
 import com.example.ui.screens.CalendarScreen
+import com.example.ui.screens.CategoryManagerScreen
 import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.NotesScreen
 import com.example.ui.screens.RecurringBillsScreen
@@ -122,11 +123,15 @@ fun BudgetFlowApp(viewModel: BudgetViewModel) {
                         viewModel = viewModel,
                         onBack = { viewModel.closeSubScreen() }
                     )
-                    "reports" -> ReportsScreen(
+                    "reports", "statistics" -> ReportsScreen(
                         viewModel = viewModel,
                         onBack = { viewModel.closeSubScreen() }
                     )
                     "settings" -> SettingsScreen(
+                        viewModel = viewModel,
+                        onBack = { viewModel.closeSubScreen() }
+                    )
+                    "category_manager" -> CategoryManagerScreen(
                         viewModel = viewModel,
                         onBack = { viewModel.closeSubScreen() }
                     )

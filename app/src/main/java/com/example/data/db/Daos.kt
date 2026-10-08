@@ -48,6 +48,9 @@ interface TransactionDao {
     @Query("DELETE FROM transactions WHERE id = :id")
     suspend fun hardDelete(id: Long)
 
+    @Query("UPDATE transactions SET category = :newCategory WHERE category = :oldCategory")
+    suspend fun renameCategory(oldCategory: String, newCategory: String)
+
     @Query("SELECT * FROM transactions WHERE isDeleted = 0")
     suspend fun getAllForBackup(): List<TransactionEntity>
 
@@ -63,8 +66,11 @@ interface CategoryDao {
     @Query("SELECT * FROM categories ORDER BY isPreset DESC, name ASC")
     fun getAllFlow(): Flow<List<CategoryEntity>>
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(category: CategoryEntity): Long
+
+    @Update
+    suspend fun update(category: CategoryEntity)
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAll(categories: List<CategoryEntity>)

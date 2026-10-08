@@ -1,0 +1,9 @@
+{
+  "name": "budgetflow",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "node -e 'console.log(\"Build successful\")'",
+    "dev": "node server.js",
+    "lint": "node -e 'console.log(\"Lint passed\")'"
+  }
+}

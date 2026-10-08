@@ -106,6 +106,10 @@ fun TransactionDetailDialog(
                 Spacer(modifier = Modifier.height(14.dp))
 
                 DetailRow(label = "Date", value = DateUtils.formatFullDate(transaction.dateEpochDay))
+                if (!transaction.subcategory.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    DetailRow(label = "Subcategory", value = transaction.subcategory)
+                }
                 if (!transaction.paymentMethod.isNullOrBlank()) {
                     Spacer(modifier = Modifier.height(8.dp))
                     DetailRow(label = "Payment", value = transaction.paymentMethod.replaceFirstChar { it.uppercase() })

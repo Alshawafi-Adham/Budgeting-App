@@ -81,6 +81,21 @@ class BudgetRepository(private val database: AppDatabase) {
         return categoryDao.insert(category)
     }
 
+    suspend fun updateCategory(category: CategoryEntity) {
+        categoryDao.update(category)
+    }
+
+    suspend fun updateCategory(oldName: String, category: CategoryEntity) {
+        categoryDao.update(category)
+        if (oldName.isNotBlank() && oldName != category.name) {
+            transactionDao.renameCategory(oldName, category.name)
+        }
+    }
+
+    suspend fun deleteCategory(category: CategoryEntity) {
+        categoryDao.delete(category)
+    }
+
     suspend fun setBudget(category: String, monthYear: String, limitCents: Long) {
         budgetDao.setBudget(
             BudgetEntity(

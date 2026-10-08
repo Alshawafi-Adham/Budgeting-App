@@ -23,6 +23,7 @@ data class TransactionEntity(
     val amountCents: Long, // Positive integer cents, e.g. 1500 = $15.00 / RM 15.00
     val type: String, // "expense" or "income"
     val category: String,
+    val subcategory: String? = null, // e.g. "Groceries", "Restaurants", "Fuel"
     val dateEpochDay: Long, // LocalDate.toEpochDay()
     val note: String? = null, // Max 500 characters
     val paymentMethod: String? = null, // "cash", "card", "transfer", or null
@@ -47,7 +48,8 @@ data class CategoryEntity(
     val type: String = "both", // "expense", "income", or "both"
     val iconName: String = "category",
     val colorHex: String = "#10B981",
-    val isPreset: Boolean = false
+    val isPreset: Boolean = false,
+    val subcategories: String? = null // Comma-separated list of subcategories
 )
 
 /**
@@ -144,6 +146,7 @@ data class RecurringTransactionEntity(
     val amountCents: Long,
     val type: String, // "expense" or "income"
     val category: String,
+    val subcategory: String? = null,
     val frequency: String, // "weekly", "monthly", "yearly"
     val nextDueDateEpochDay: Long,
     val dayOfMonth: Int = 1, // Anchor day for month-end clamping (e.g. 31)
@@ -153,6 +156,28 @@ data class RecurringTransactionEntity(
     val note: String? = null,
     val createdAt: Long = System.currentTimeMillis()
 )
+
+object SubcategoryRegistry {
+    val PRESETS: Map<String, List<String>> = mapOf(
+        "Food" to listOf("Groceries", "Restaurants", "Coffee & Cafes", "Food Delivery", "Alcohol & Bars"),
+        "Transport" to listOf("Fuel / Petrol", "Public Transit", "Rideshare / Taxi", "Parking", "Vehicle Maintenance"),
+        "Housing" to listOf("Rent", "Mortgage", "Property Tax", "Repairs & Maintenance", "Furniture & Decor"),
+        "Utilities" to listOf("Electricity", "Water", "High-speed Internet", "Mobile / Phone", "Gas", "Waste / Trash"),
+        "Entertainment" to listOf("Streaming Services", "Movies & Concerts", "Gaming", "Hobbies & Crafts", "Books & News"),
+        "Health" to listOf("Doctor & Dentist", "Pharmacy & Meds", "Fitness & Gym", "Health Insurance", "Therapy & Mental Health"),
+        "Shopping" to listOf("Clothing & Shoes", "Electronics", "Personal Care & Beauty", "Home Essentials", "Gifts"),
+        "Education" to listOf("Courses & Tuition", "Books & Study Materials", "Workshops", "Certifications"),
+        "Savings" to listOf("Emergency Fund", "Retirement Fund", "Investments", "Vacation Goal"),
+        "Salary" to listOf("Base Salary", "Performance Bonus", "Overtime", "Commission"),
+        "Freelance" to listOf("Client Projects", "Consulting", "Side Business"),
+        "Investment" to listOf("Dividends", "Capital Gains", "Interest", "Rental Yield"),
+        "Other" to listOf("General", "Cash Gift", "Reimbursement", "Miscellaneous")
+    )
+
+    fun getSubcategories(category: String): List<String> {
+        return PRESETS[category] ?: listOf("General", "Other")
+    }
+}
 
 /**
  * Key-value settings entity.

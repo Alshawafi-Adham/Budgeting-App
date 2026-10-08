@@ -141,7 +141,9 @@ class BudgetViewModel(application: Application) : AndroidViewModel(application) 
     val searchQuery = MutableStateFlow("")
     val filterType = MutableStateFlow("all") // "all", "expense", "income"
     val filterCategory = MutableStateFlow<String?>(null)
-    val filterDateRange = MutableStateFlow("all") // "all", "this_month", "last_month"
+    val filterDateRange = MutableStateFlow("all") // "all", "day", "weekly", "this_month", "yearly", "custom"
+    val customStartEpochDay = MutableStateFlow<Long?>(null)
+    val customEndEpochDay = MutableStateFlow<Long?>(null)
     val sortOrder = MutableStateFlow("date_desc") // "date_desc", "date_asc", "amount_desc", "amount_asc"
 
     val filteredTransactions: StateFlow<List<TransactionEntity>> = combine(
@@ -161,10 +163,16 @@ class BudgetViewModel(application: Application) : AndroidViewModel(application) 
         val sort = args[5] as String
 
         val today = LocalDate.now()
+        val todayEpoch = today.toEpochDay()
+        val startOfWeek = today.minusDays(today.dayOfWeek.value.toLong() - 1).toEpochDay()
+        val endOfWeek = today.plusDays(7L - today.dayOfWeek.value).toEpochDay()
         val thisMonthStart = today.withDayOfMonth(1).toEpochDay()
         val thisMonthEnd = today.plusMonths(1).withDayOfMonth(1).minusDays(1).toEpochDay()
-        val lastMonthStart = today.minusMonths(1).withDayOfMonth(1).toEpochDay()
-        val lastMonthEnd = today.withDayOfMonth(1).minusDays(1).toEpochDay()
+        val thisYearStart = today.withDayOfYear(1).toEpochDay()
+        val thisYearEnd = today.plusYears(1).withDayOfYear(1).minusDays(1).toEpochDay()
+
+        val customStart = customStartEpochDay.value ?: 0L
+        val customEnd = customEndEpochDay.value ?: Long.MAX_VALUE
 
         var result = txList.filter { tx ->
             val matchesType = when (type) {
@@ -174,12 +182,16 @@ class BudgetViewModel(application: Application) : AndroidViewModel(application) 
             }
             val matchesCat = cat == null || tx.category.equals(cat, ignoreCase = true)
             val matchesRange = when (range) {
-                "this_month" -> tx.dateEpochDay in thisMonthStart..thisMonthEnd
-                "last_month" -> tx.dateEpochDay in lastMonthStart..lastMonthEnd
+                "day", "today" -> tx.dateEpochDay == todayEpoch
+                "weekly" -> tx.dateEpochDay in startOfWeek..endOfWeek
+                "this_month", "monthly" -> tx.dateEpochDay in thisMonthStart..thisMonthEnd
+                "yearly" -> tx.dateEpochDay in thisYearStart..thisYearEnd
+                "custom" -> tx.dateEpochDay in customStart..customEnd
                 else -> true
             }
             val matchesQuery = query.isEmpty() ||
                     tx.category.lowercase().contains(query) ||
+                    (tx.subcategory?.lowercase()?.contains(query) == true) ||
                     (tx.note?.lowercase()?.contains(query) == true)
 
             matchesType && matchesCat && matchesRange && matchesQuery
@@ -266,6 +278,7 @@ class BudgetViewModel(application: Application) : AndroidViewModel(application) 
         amountCents: Long,
         type: String,
         category: String,
+        subcategory: String? = null,
         dateEpochDay: Long,
         note: String?,
         paymentMethod: String?,
@@ -280,6 +293,7 @@ class BudgetViewModel(application: Application) : AndroidViewModel(application) 
                         amountCents = amountCents,
                         type = type,
                         category = category,
+                        subcategory = subcategory,
                         dateEpochDay = dateEpochDay,
                         note = note,
                         paymentMethod = paymentMethod,
@@ -293,6 +307,7 @@ class BudgetViewModel(application: Application) : AndroidViewModel(application) 
                     amountCents = amountCents,
                     type = type,
                     category = category,
+                    subcategory = subcategory,
                     dateEpochDay = dateEpochDay,
                     note = note,
                     paymentMethod = paymentMethod,
@@ -458,7 +473,7 @@ class BudgetViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     // Category actions
-    fun addCustomCategory(name: String, type: String = "expense", iconName: String = "category", colorHex: String = "#10B981") {
+    fun addCustomCategory(name: String, type: String = "expense", iconName: String = "category", colorHex: String = "#10B981", subcategories: String? = null) {
         viewModelScope.launch {
             repository.insertCategory(
                 CategoryEntity(
@@ -466,9 +481,22 @@ class BudgetViewModel(application: Application) : AndroidViewModel(application) 
                     type = type,
                     iconName = iconName,
                     colorHex = colorHex,
-                    isPreset = false
+                    isPreset = false,
+                    subcategories = subcategories
                 )
             )
+        }
+    }
+
+    fun updateCategory(category: CategoryEntity, oldName: String = category.name) {
+        viewModelScope.launch {
+            repository.updateCategory(oldName, category)
+        }
+    }
+
+    fun deleteCategory(category: CategoryEntity) {
+        viewModelScope.launch {
+            repository.deleteCategory(category)
         }
     }
 

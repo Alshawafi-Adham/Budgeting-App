@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DateRange
@@ -57,6 +58,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.ui.components.CategoryIconBadge
 import com.example.ui.theme.ExpenseRedDark
 import com.example.ui.util.CurrencyUtils
 import com.example.ui.viewmodel.BudgetViewModel
@@ -71,6 +73,7 @@ fun SettingsScreen(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val userSettings by viewModel.userSettings.collectAsState()
+    val categories by viewModel.categories.collectAsState()
 
     val currentCurrency = userSettings["currency"] ?: "MYR"
     val currentTheme = userSettings["theme"] ?: "system"
@@ -161,6 +164,115 @@ fun SettingsScreen(
                             onClick = { showCycleDayDialog = true },
                             tag = "setting_cycle_day"
                         )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
+                        SettingsRow(
+                            icon = Icons.Default.Category,
+                            title = "Categories & Subcategories",
+                            subtitle = "Customize expense & income subcategories",
+                            onClick = { viewModel.openSubScreen("category_manager") },
+                            tag = "setting_categories_manager"
+                        )
+                    }
+                }
+            }
+
+            // Categories & Subcategories section
+            item {
+                Text(
+                    text = "Categories & Subcategories",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { viewModel.openSubScreen("category_manager") }
+                        .testTag("setting_categories_card"),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.Category,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text(
+                                        text = "Manage Categories & Subcategories",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = "${categories.size} categories • Tap to edit anytime",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                            Icon(
+                                imageVector = Icons.Default.ChevronRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.outline
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Category preview badges
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            categories.take(5).forEach { cat ->
+                                CategoryIconBadge(
+                                    categoryName = cat.name,
+                                    size = 32.dp,
+                                    iconSize = 16.dp
+                                )
+                            }
+                            if (categories.size > 5) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .androidx.compose.foundation.background(
+                                            MaterialTheme.colorScheme.surfaceVariant,
+                                            androidx.compose.foundation.shape.CircleShape
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "+${categories.size - 5}",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Button(
+                            onClick = { viewModel.openSubScreen("category_manager") },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("btn_edit_categories_settings"),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text("Edit Categories & Subcategories")
+                        }
                     }
                 }
             }

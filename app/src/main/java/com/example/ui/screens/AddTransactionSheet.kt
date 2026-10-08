@@ -100,6 +100,10 @@ fun AddTransactionSheet(
         )
     }
 
+    var selectedSubcategory by remember(editingTx, selectedCategory) {
+        mutableStateOf(editingTx?.subcategory)
+    }
+
     var selectedDateEpochDay by remember(editingTx, prefillDateEpochDay) {
         mutableStateOf(editingTx?.dateEpochDay ?: prefillDateEpochDay)
     }
@@ -289,7 +293,10 @@ fun AddTransactionSheet(
                     val isSelected = selectedCategory.equals(cat.name, ignoreCase = true)
                     FilterChip(
                         selected = isSelected,
-                        onClick = { selectedCategory = cat.name },
+                        onClick = {
+                            selectedCategory = cat.name
+                            selectedSubcategory = null
+                        },
                         label = { Text(cat.name) },
                         leadingIcon = {
                             CategoryIconBadge(
@@ -305,6 +312,115 @@ fun AddTransactionSheet(
                         modifier = Modifier.testTag("cat_chip_${cat.name.lowercase()}")
                     )
                 }
+            }
+
+            // Subcategory Selection (Feature: Subcategories for income and expenses)
+            val currentCatEntity = categories.find { it.name.equals(selectedCategory, ignoreCase = true) }
+            val availableSubcategories = remember(currentCatEntity, selectedCategory) {
+                if (currentCatEntity != null && !currentCatEntity.subcategories.isNullOrBlank()) {
+                    currentCatEntity.subcategories.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+                } else {
+                    com.example.data.model.SubcategoryRegistry.getSubcategories(selectedCategory)
+                }
+            }
+
+            var showAddSubcatPrompt by remember { mutableStateOf(false) }
+            var quickSubcatInput by remember { mutableStateOf("") }
+
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Subcategory (Optional)",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                TextButton(
+                    onClick = { showAddSubcatPrompt = true },
+                    modifier = Modifier.testTag("add_quick_subcat_btn")
+                ) {
+                    Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp))
+                    Spacer(modifier = Modifier.width(2.dp))
+                    Text("Add Subcategory", fontSize = 12.sp)
+                }
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                availableSubcategories.forEach { sub ->
+                    val isSubSelected = selectedSubcategory.equals(sub, ignoreCase = true)
+                    FilterChip(
+                        selected = isSubSelected,
+                        onClick = {
+                            selectedSubcategory = if (isSubSelected) null else sub
+                        },
+                        label = { Text(sub, fontSize = 12.sp) },
+                        modifier = Modifier.testTag("subcat_chip_${sub.lowercase().replace(" ", "_").replace("/", "_")}")
+                    )
+                }
+            }
+
+            if (showAddSubcatPrompt) {
+                AlertDialog(
+                    onDismissRequest = {
+                        showAddSubcatPrompt = false
+                        quickSubcatInput = ""
+                    },
+                    title = { Text("New Subcategory for $selectedCategory", fontWeight = FontWeight.Bold) },
+                    text = {
+                        OutlinedTextField(
+                            value = quickSubcatInput,
+                            onValueChange = { quickSubcatInput = it },
+                            label = { Text("Subcategory Name") },
+                            placeholder = { Text("e.g. Snacks, Petrol...") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                val trimmed = quickSubcatInput.trim()
+                                if (trimmed.isNotBlank()) {
+                                    val updatedList = (availableSubcategories + trimmed).distinct()
+                                    if (currentCatEntity != null) {
+                                        viewModel.updateCategory(
+                                            currentCatEntity.copy(subcategories = updatedList.joinToString(","))
+                                        )
+                                    } else {
+                                        viewModel.addCustomCategory(
+                                            name = selectedCategory,
+                                            type = selectedType,
+                                            subcategories = updatedList.joinToString(",")
+                                        )
+                                    }
+                                    selectedSubcategory = trimmed
+                                    quickSubcatInput = ""
+                                    showAddSubcatPrompt = false
+                                }
+                            }
+                        ) {
+                            Text("Add & Select")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(
+                            onClick = {
+                                showAddSubcatPrompt = false
+                                quickSubcatInput = ""
+                            }
+                        ) {
+                            Text("Cancel")
+                        }
+                    }
+                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -459,6 +575,7 @@ fun AddTransactionSheet(
                                 amountCents = parseResult.cents,
                                 type = selectedType,
                                 category = selectedCategory,
+                                subcategory = selectedSubcategory,
                                 dateEpochDay = selectedDateEpochDay,
                                 note = noteText.trim().ifEmpty { null },
                                 paymentMethod = selectedPaymentMethod,

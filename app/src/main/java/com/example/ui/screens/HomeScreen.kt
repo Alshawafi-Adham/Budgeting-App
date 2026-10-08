@@ -125,12 +125,12 @@ fun HomeScreen(
                         )
                     }
                     IconButton(
-                        onClick = { viewModel.openSubScreen("reports") },
-                        modifier = Modifier.testTag("home_reports_btn")
+                        onClick = { viewModel.openSubScreen("statistics") },
+                        modifier = Modifier.testTag("home_statistics_btn")
                     ) {
                         Icon(
                             imageVector = Icons.Default.BarChart,
-                            contentDescription = "Reports & Charts",
+                            contentDescription = "Statistics & Reports",
                             tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
@@ -153,6 +153,7 @@ fun HomeScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .clickable { viewModel.openSubScreen("statistics") }
                     .testTag("home_summary_card"),
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(
@@ -300,54 +301,77 @@ fun HomeScreen(
 
         // Quick-action chips
         item {
-            Row(
+            LazyRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                AssistChip(
-                    onClick = { viewModel.openAddTransaction(type = "expense") },
-                    label = { Text("Add Expense") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = null,
-                            tint = ExpenseRedDark,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    },
-                    modifier = Modifier.weight(1f).testTag("chip_add_expense"),
-                    shape = RoundedCornerShape(12.dp)
-                )
+                item {
+                    AssistChip(
+                        onClick = { viewModel.openAddTransaction(type = "expense") },
+                        label = { Text("Add Expense") },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = null,
+                                tint = ExpenseRedDark,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        },
+                        modifier = Modifier.testTag("chip_add_expense"),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
 
-                AssistChip(
-                    onClick = { viewModel.openAddTransaction(type = "income") },
-                    label = { Text("Add Income") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = null,
-                            tint = IncomeGreenDark,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    },
-                    modifier = Modifier.weight(1f).testTag("chip_add_income"),
-                    shape = RoundedCornerShape(12.dp)
-                )
+                item {
+                    AssistChip(
+                        onClick = { viewModel.openAddTransaction(type = "income") },
+                        label = { Text("Add Income") },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = null,
+                                tint = IncomeGreenDark,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        },
+                        modifier = Modifier.testTag("chip_add_income"),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
 
-                AssistChip(
-                    onClick = { viewModel.openSubScreen("journal_editor") },
-                    label = { Text("Write Note") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.EditNote,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    },
-                    modifier = Modifier.weight(1f).testTag("chip_write_note"),
-                    shape = RoundedCornerShape(12.dp)
-                )
+                item {
+                    AssistChip(
+                        onClick = { viewModel.openSubScreen("statistics") },
+                        label = { Text("Statistics") },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.BarChart,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        },
+                        modifier = Modifier.testTag("chip_view_statistics"),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
+
+                item {
+                    AssistChip(
+                        onClick = { viewModel.openSubScreen("journal_editor") },
+                        label = { Text("Write Note") },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.EditNote,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        },
+                        modifier = Modifier.testTag("chip_write_note"),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
             }
         }
 
