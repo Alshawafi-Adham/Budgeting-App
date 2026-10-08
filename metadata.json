@@ -1,0 +1,6 @@
+{
+  "name": "BudgetFlow",
+  "description": "Your money, your story. Local-first, offline budgeting and financial journal.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
